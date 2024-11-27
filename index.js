@@ -1,20 +1,20 @@
 // Add this at the beginning of the script
-function sendKeepAliveRequest() {
-  const keepAliveUrl = `https://opentdb.com/api.php?amount=1&token=0949e33fcc375e5983f57a9e845a3385ddee452a75f0722372291bb34c27a88a`;
+//function sendKeepAliveRequest() {
+  //const keepAliveUrl = `https://opentdb.com/api.php?amount=1&token=0949e33fcc375e5983f57a9e845a3385ddee452a75f0722372291bb34c27a88a`;
   
-  fetch(keepAliveUrl)
-    .then(response => response.json())
-    .then(data => {
-      console.log('Keep-alive request sent:', data);
-    })
-    .catch(error => {
-      console.error('Error in keep-alive request:', error);
-    });
-}
+  //fetch(keepAliveUrl)
+   // .then(response => response.json())
+    //.then(data => {
+     // console.log('Keep-alive request sent:', data);
+    //})
+    //.catch(error => {
+      //console.error('Error in keep-alive request:', error);
+   // });
+//}
 
-const FIVE_HOURS_IN_MS = 5 * 60 * 60 * 1000; // 5 hours
-setInterval(sendKeepAliveRequest, FIVE_HOURS_IN_MS);
-sendKeepAliveRequest(); // Send an initial keep-alive request
+//const FIVE_HOURS_IN_MS = 5 * 60 * 60 * 1000; // 5 hours
+//setInterval(sendKeepAliveRequest, FIVE_HOURS_IN_MS);
+//sendKeepAliveRequest(); // Send an initial keep-alive request
 
 
 
@@ -73,7 +73,7 @@ const selectedCategory = categories[lastCategoryIndex];
 const categoryNumber = categoryTable[selectedCategory];
 
 // Create the URL for the quiz
-const url = `https://opentdb.com/api.php?amount=10&category=${categoryNumber}&type=multiple&token=0949e33fcc375e5983f57a9e845a3385ddee452a75f0722372291bb34c27a88a`;
+const url = `https://opentdb.com/api.php?amount=10&category=${categoryNumber}&type=multiple`;
 
 // Save the URL to localStorage
 localStorage.setItem('quizURL', url);

@@ -7,9 +7,17 @@ let highScores = JSON.parse(localStorage.getItem("highScores")) || [];
 if (highScores.length === 0) {
   highScoresList.innerHTML = `<li class="high-score">No scores yet</li>`;
 } else {
+  // Sort scores to ensure the highest scores are at the top
+  highScores.sort((a, b) => b.score - a.score);
+
+  // Determine the highest score
+  const topScore = highScores[0]?.score;
+
   highScoresList.innerHTML = highScores
-    .map(score => {
-      return `<li class="high-score">${score.name} - ${score.score}</li>`;
+    .map((score) => {
+      // Add a trophy to everyone with the top score
+      const trophyIcon = score.score === topScore ? ' 🏆' : '';
+      return `<li class="high-score">${score.name} - ${score.score}${trophyIcon}</li>`;
     })
     .join("");
 }

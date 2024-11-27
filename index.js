@@ -21,8 +21,8 @@ sendKeepAliveRequest(); // Send an initial keep-alive request
 
 
 const categoryTable = {
-  "Entertainment: Books" : 10,
   "Technology" : 18,
+  "Entertainment: Books" : 10,
   "General Knowledge" : 9,
   "Entertainment: Film" : 11,
   "Entertainment: Music" : 12,

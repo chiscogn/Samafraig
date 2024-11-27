@@ -51,7 +51,7 @@ const selectedCategory = categories[lastCategoryIndex];
 const categoryNumber = categoryTable[selectedCategory];
 
 // Create the URL for the quiz
-const url = `https://opentdb.com/api.php?amount=10&category=${categoryNumber}&type=multiple`;
+const url = `https://opentdb.com/api.php?amount=10&category=${categoryNumber}&type=multiple&token=0949e33fcc375e5983f57a9e845a3385ddee452a75f0722372291bb34c27a88a`;
 
 // Save the URL to localStorage
 localStorage.setItem('quizURL', url);

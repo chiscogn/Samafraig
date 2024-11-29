@@ -17,17 +17,25 @@ const categoryTable = {
   "Entertainment: Japanese Anime & Manga": 31,
 };
 
+// Utility function to get today's date in PST (YYYY-MM-DD)
+function getPSTDate() {
+  const now = new Date();
+  // Offset for PST (UTC-8 or UTC-7 during DST)
+  const pstOffset = now.getTimezoneOffset() + 8 * 60; // 8 hours in minutes
+  now.setMinutes(now.getMinutes() - pstOffset);
+  return now.toISOString().split('T')[0]; // Get YYYY-MM-DD
+}
+
+// Get the last date and last category index from localStorage
 let lastCategoryIndex = parseInt(localStorage.getItem('lastCategoryIndex')) || 0;
 const lastDate = localStorage.getItem('lastDate');
 
-// Get today's date in YYYY-MM-DD format
-const today = new Date().toISOString().split('T')[0];
+// Get today's date in PST
+const today = getPSTDate();
+
+// Display today's date on the page
 const todaysDateElement = document.getElementById('todaysDate');
 todaysDateElement.innerText = today;
-
-setTimeout(() => {
-  location.reload();  // Refresh after 5 seconds
-}, 15000);
 
 // Check if the day has changed
 if (lastDate !== today) {
@@ -35,14 +43,15 @@ if (lastDate !== today) {
   const lastIndexBackup = localStorage.getItem('lastCategoryIndex'); // Backup lastCategoryIndex
   localStorage.clear(); // Clear localStorage
   localStorage.setItem('lastCategoryIndex', lastIndexBackup); // Restore lastCategoryIndex
-  
+
   // Update the date in localStorage
   localStorage.setItem('lastDate', today);
 
   // Increment category index and save
   lastCategoryIndex = (lastCategoryIndex + 1) % Object.keys(categoryTable).length; // Cycle through categories
   localStorage.setItem('lastCategoryIndex', lastCategoryIndex);
-  location.reload()
+
+  location.reload(); // Refresh the page
 }
 
 // Get the category from the updated index
@@ -63,7 +72,8 @@ console.log(`Category: ${selectedCategory}, Number: ${categoryNumber}, URL: ${ur
 const categoryNameElement = document.getElementById('categoryName');
 categoryNameElement.innerText = selectedCategory;
 
-// Function to update time
-
 // Optional: Remove auto-reload during testing
 // Reload the page after 15 seconds for testing
+setTimeout(() => {
+  location.reload(); // Refresh after 15 seconds
+}, 15000);

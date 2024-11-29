@@ -7,33 +7,7 @@ function getPSTDate() {
   return new Date(pstTime);
 }
 
-// Get today's date in PST
-const today = getPSTDate().toISOString().split('T')[0];
-const todaysDateElement = document.getElementById('todaysDate');
-todaysDateElement.innerText = today;
-
-// Retrieve the last category index and last date from localStorage
-let lastCategoryIndex = parseInt(localStorage.getItem('lastCategoryIndex')) || 0;
-const lastDate = localStorage.getItem('lastDate');
-
-// Check if the day has changed based on PST
-if (lastDate !== today) {
-  const lastIndexBackup = localStorage.getItem('lastCategoryIndex'); // Backup lastCategoryIndex
-  localStorage.clear(); // Clear localStorage
-  localStorage.setItem('lastCategoryIndex', lastIndexBackup); // Restore lastCategoryIndex
-  
-  // Update the date in localStorage
-  localStorage.setItem('lastDate', today);
-
-  // Increment category index and save
-  lastCategoryIndex = (lastCategoryIndex + 1) % Object.keys(categoryTable).length;
-  localStorage.setItem('lastCategoryIndex', lastCategoryIndex);
-
-  // Reload the page to apply changes
-  location.reload();
-}
-
-// Category table for quiz categories
+// Define category table for quiz categories
 const categoryTable = {
   "Entertainment: Books": 10,
   "Technology": 18,
@@ -52,42 +26,76 @@ const categoryTable = {
   "Entertainment: Japanese Anime & Manga": 31,
 };
 
+// Get today's date in PST
+const today = getPSTDate().toISOString().split('T')[0];
+const todaysDateElement = document.getElementById('todaysDate');
+todaysDateElement.innerText = today;
+
+// Retrieve the last category index and last date from localStorage
+let lastCategoryIndex = parseInt(localStorage.getItem('lastCategoryIndex')) || 0;
+const lastDate = localStorage.getItem('lastDate');
+
+// Check if the day has changed based on PST
+if (lastDate !== today) {
+  const lastIndexBackup = localStorage.getItem('lastCategoryIndex'); // Backup lastCategoryIndex
+  localStorage.clear(); // Clear localStorage
+  localStorage.setItem('lastCategoryIndex', lastIndexBackup); // Restore lastCategoryIndex
+
+  // Update the date in localStorage
+  localStorage.setItem('lastDate', today);
+
+  // Increment category index and save
+  lastCategoryIndex = (lastCategoryIndex + 1) % Object.keys(categoryTable).length;
+  localStorage.setItem('lastCategoryIndex', lastCategoryIndex);
+
+  // Reload the page to apply changes
+  location.reload();
+}
+
 // Get the category from the updated index
 const categories = Object.keys(categoryTable);
 const selectedCategory = categories[lastCategoryIndex];
 const categoryNumber = categoryTable[selectedCategory];
 
-// Create the URL for the quiz
-const url = `https://opentdb.com/api.php?amount=10&category=${categoryNumber}&type=multiple&token=ff1c4012f36aeb7837c95b31291bbf22e3c437d94f0cea542dd3d7687148ddb0`;
-
-// Save the URL to localStorage
-localStorage.setItem('quizURL', url);
-
-// Log the details
-console.log(`Category: ${selectedCategory}, Number: ${categoryNumber}, URL: ${url}`);
-
-// Update the category name on the page
-const categoryNameElement = document.getElementById('categoryName');
-categoryNameElement.innerText = selectedCategory;
-
-// Send a keep-alive request initially and at 5-hour intervals
-function sendKeepAliveRequest() {
-  const keepAliveUrl = `https://opentdb.com/api.php?amount=1&token=ff1c4012f36aeb7837c95b31291bbf22e3c437d94f0cea542dd3d7687148ddb0`;
-  
-  fetch(keepAliveUrl)
-    .then(response => response.json())
-    .then(data => {
-      console.log('Keep-alive request sent:', data);
-    })
-    .catch(error => {
-      console.error('Error in keep-alive request:', error);
-    });
+// Ensure API token is valid
+function getQuizToken() {
+  return new Promise((resolve, reject) => {
+    let token = localStorage.getItem('quizToken');
+    if (!token) {
+      // Request a new token if not found
+      fetch('https://opentdb.com/api_token.php?command=request')
+        .then(response => response.json())
+        .then(data => {
+          if (data.response_code === 0) {
+            token = data.token;
+            localStorage.setItem('quizToken', token); // Save token to localStorage
+            resolve(token);
+          } else {
+            reject('Failed to fetch token.');
+          }
+        })
+        .catch(reject);
+    } else {
+      resolve(token);
+    }
+  });
 }
-const FIVE_HOURS_IN_MS = 5 * 60 * 60 * 1000; // 5 hours
-setInterval(sendKeepAliveRequest, FIVE_HOURS_IN_MS);
-sendKeepAliveRequest(); // Send an initial keep-alive request
 
-// Reload the page after 15 seconds for testing
-setTimeout(() => {
-  location.reload();
-}, 15000);
+// Create and validate the quiz URL
+function fetchQuizQuestions() {
+  getQuizToken()
+    .then((token) => {
+      const url = `https://opentdb.com/api.php?amount=10&category=${categoryNumber}&type=multiple&token=${token}`;
+      localStorage.setItem('quizURL', url); // Save URL to localStorage
+
+      // Fetch questions
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          if (data.response_code === 0) {
+            console.log('Questions retrieved:', data.results);
+            // Use data.results to display questions on the page
+          } else if (data.response_code === 3) {
+            // Token expired, fetch a new one
+            localStorage.removeItem('quizToken');
+            fetch

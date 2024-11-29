@@ -26,48 +26,30 @@ function getPSTDate() {
   return new Date(pstTime);
 }
 
-// Utility functions to handle localStorage safely
-function safeLocalStorageGet(key) {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    console.warn('localStorage unavailable, fallback used for key:', key);
-    return null;
-  }
-}
-
-function safeLocalStorageSet(key, value) {
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    console.warn('localStorage unavailable, unable to set key:', key);
-  }
-}
-
 // Get today's date in PST
 const today = getPSTDate().toISOString().split('T')[0];
 const todaysDateElement = document.getElementById('todaysDate');
 todaysDateElement.innerText = today;
 
 // Retrieve the last category index and last date from localStorage
-let lastCategoryIndex = parseInt(safeLocalStorageGet('lastCategoryIndex')) || 0;
-const lastDate = safeLocalStorageGet('lastDate');
+let lastCategoryIndex = parseInt(localStorage.getItem('lastCategoryIndex')) || 0;
+const lastDate = localStorage.getItem('lastDate');
 
 // Check if the day has changed based on PST
 if (lastDate !== today) {
-  const lastIndexBackup = safeLocalStorageGet('lastCategoryIndex'); // Backup lastCategoryIndex
+  const lastIndexBackup = localStorage.getItem('lastCategoryIndex'); // Backup lastCategoryIndex
   localStorage.clear(); // Clear localStorage
-  safeLocalStorageSet('lastCategoryIndex', lastIndexBackup); // Restore lastCategoryIndex
+  localStorage.setItem('lastCategoryIndex', lastIndexBackup); // Restore lastCategoryIndex
   
   // Update the date in localStorage
-  safeLocalStorageSet('lastDate', today);
+  localStorage.setItem('lastDate', today);
 
   // Increment category index and save
-  lastCategoryIndex = (lastCategoryIndex + 1) % Object.keys(categoryTable).length;
-  safeLocalStorageSet('lastCategoryIndex', lastCategoryIndex);
+  lastCategoryIndex = (lastCategoryIndex + 1) % Object.keys(categoryTable).length; // Now categoryTable is defined
+  localStorage.setItem('lastCategoryIndex', lastCategoryIndex);
 
-  // Delay reload slightly to ensure all data is saved
-  setTimeout(() => location.reload(), 50);
+  // Reload the page to apply changes
+  location.reload();
 }
 
 // Get the category from the updated index
@@ -78,7 +60,7 @@ const categoryNumber = categoryTable[selectedCategory];
 // Ensure API token is valid
 function getQuizToken() {
   return new Promise((resolve, reject) => {
-    let token = safeLocalStorageGet('quizToken');
+    let token = localStorage.getItem('quizToken');
     if (!token) {
       // Request a new token if not found
       fetch('https://opentdb.com/api_token.php?command=request')
@@ -86,7 +68,7 @@ function getQuizToken() {
         .then(data => {
           if (data.response_code === 0) {
             token = data.token;
-            safeLocalStorageSet('quizToken', token); // Save token to localStorage
+            localStorage.setItem('quizToken', token); // Save token to localStorage
             resolve(token);
           } else {
             reject('Failed to fetch token.');
@@ -100,48 +82,38 @@ function getQuizToken() {
 }
 
 // Create and validate the quiz URL
-function fetchQuizQuestions(token) {
-  return new Promise((resolve, reject) => {
-    const url = `https://opentdb.com/api.php?amount=10&category=${categoryNumber}&type=multiple&token=${token}`;
-    safeLocalStorageSet('quizURL', url); // Save URL to localStorage
+function fetchQuizQuestions() {
+  getQuizToken()
+    .then((token) => {
+      const url = `https://opentdb.com/api.php?amount=10&category=${categoryNumber}&type=multiple&token=${token}`;
+      localStorage.setItem('quizURL', url); // Save URL to localStorage
 
-    // Fetch questions
-    fetch(url)
-      .then(response => response.json())
-      .then(data => {
-        if (data.response_code === 0) {
-          console.log('Questions retrieved:', data.results);
-          resolve(data.results); // Use data.results to display questions
-        } else if (data.response_code === 3) {
-          // Token expired, fetch a new one
-          safeLocalStorageSet('quizToken', null);
-          getQuizToken().then(fetchQuizQuestions).then(resolve).catch(reject);
-        } else {
-          console.error('No questions available or API error:', data.response_code);
-          reject(data.response_code);
-        }
-      })
-      .catch(reject);
-  });
+      // Fetch questions
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          if (data.response_code === 0) {
+            console.log('Questions retrieved:', data.results);
+            // Use data.results to display questions on the page
+          } else if (data.response_code === 3) {
+            // Token expired, fetch a new one
+            localStorage.removeItem('quizToken');
+            fetchQuizQuestions(); // Retry with a new token
+          } else {
+            console.error('No questions available or API error:', data.response_code);
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching quiz questions:', error);
+        });
+    })
+    .catch(error => {
+      console.error('Error getting token:', error);
+    });
 }
 
-// Add loading indicator while fetching questions
-const loadingElement = document.getElementById('loading');
-loadingElement.style.display = 'block'; // Show loading indicator
-
-// Fetch quiz questions and update UI
-getQuizToken()
-  .then((token) => fetchQuizQuestions(token))
-  .then((questions) => {
-    // Hide loading indicator
-    loadingElement.style.display = 'none';
-    // Display questions (add your logic here)
-    console.log('Questions loaded:', questions);
-  })
-  .catch((error) => {
-    console.error('Error initializing quiz:', error);
-    loadingElement.innerText = 'Error loading questions. Please refresh.';
-  });
+// Start fetching quiz questions
+fetchQuizQuestions();
 
 // Update the category name on the page
 const categoryNameElement = document.getElementById('categoryName');
@@ -166,5 +138,8 @@ const FIVE_HOURS_IN_MS = 5 * 60 * 60 * 1000; // 5 hours
 setInterval(sendKeepAliveRequest, FIVE_HOURS_IN_MS);
 sendKeepAliveRequest(); // Send an initial keep-alive request
 
-// Optional: Add loading element in your HTML
-// <div id="loading" style="display: none;">Loading questions...</div>
+// Optional: Remove auto-reload during testing
+// Reload the page after 15 seconds for testing
+setTimeout(() => {
+  location.reload();
+ }, 15000);

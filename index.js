@@ -168,4 +168,3 @@ sendKeepAliveRequest(); // Send an initial keep-alive request
 
 // Optional: Add loading element in your HTML
 // <div id="loading" style="display: none;">Loading questions...</div>
-

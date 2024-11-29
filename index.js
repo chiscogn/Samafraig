@@ -1,56 +1,23 @@
-// Add this at the beginning of the script
-function sendKeepAliveRequest() {
-const keepAliveUrl = `https://opentdb.com/api.php?amount=1&token=0949e33fcc375e5983f57a9e845a3385ddee452a75f0722372291bb34c27a88a`;
-  
-  fetch(keepAliveUrl)
-    .then(response => response.json())
-    .then(data => {
-      console.log('Keep-alive request sent:', data);
-    })
-    .catch(error => {
-      console.error('Error in keep-alive request:', error);
-    });
+// Function to calculate today's date in PST
+function getPSTDate() {
+  const now = new Date();
+  const utcTime = now.getTime() + now.getTimezoneOffset() * 60000;
+  const pstOffset = -8; // Adjust to PST (UTC-8)
+  const pstTime = utcTime + pstOffset * 3600000;
+  return new Date(pstTime);
 }
-const FIVE_HOURS_IN_MS = 5 * 60 * 60 * 1000; // 5 hours
-setInterval(sendKeepAliveRequest, FIVE_HOURS_IN_MS);
-sendKeepAliveRequest(); // Send an initial keep-alive request
 
-
-
-const categoryTable = {
-  "Entertainment: Books" : 10,
-  "Technology" : 18,
-  "General Knowledge" : 9,
-  "Entertainment: Film" : 11,
-  "Entertainment: Music" : 12,
-  "Entertainment: Television" : 14,
-  "Entertainment: Video Games" : 15,
-  "Science & Nature" : 17,
-  "Mythology" : 20,
-  "Sports": 21,
-  "Geography": 22,
-  "History": 23,
-  "Celebrities": 26,
-  "Animals": 27,
-  "Entertainment: Japanese Anime & Manga": 31,
-};
+// Get today's date in PST
+const today = getPSTDate().toISOString().split('T')[0];
+const todaysDateElement = document.getElementById('todaysDate');
+todaysDateElement.innerText = today;
 
 // Retrieve the last category index and last date from localStorage
 let lastCategoryIndex = parseInt(localStorage.getItem('lastCategoryIndex')) || 0;
 const lastDate = localStorage.getItem('lastDate');
 
-// Get today's date in YYYY-MM-DD format
-const today = new Date().toISOString().split('T')[0];
-const todaysDateElement = document.getElementById('todaysDate');
-todaysDateElement.innerText = today;
-
-setTimeout(() => {
-  location.reload();  // Refresh after 5 seconds
-}, 15000);
-
-// Check if the day has changed
+// Check if the day has changed based on PST
 if (lastDate !== today) {
-  // Clear all localStorage except 'lastCategoryIndex'
   const lastIndexBackup = localStorage.getItem('lastCategoryIndex'); // Backup lastCategoryIndex
   localStorage.clear(); // Clear localStorage
   localStorage.setItem('lastCategoryIndex', lastIndexBackup); // Restore lastCategoryIndex
@@ -59,10 +26,31 @@ if (lastDate !== today) {
   localStorage.setItem('lastDate', today);
 
   // Increment category index and save
-  lastCategoryIndex = (lastCategoryIndex + 1) % Object.keys(categoryTable).length; // Cycle through categories
+  lastCategoryIndex = (lastCategoryIndex + 1) % Object.keys(categoryTable).length;
   localStorage.setItem('lastCategoryIndex', lastCategoryIndex);
-  location.reload()
+
+  // Reload the page to apply changes
+  location.reload();
 }
+
+// Category table for quiz categories
+const categoryTable = {
+  "Entertainment: Books": 10,
+  "Technology": 18,
+  "General Knowledge": 9,
+  "Entertainment: Film": 11,
+  "Entertainment: Music": 12,
+  "Entertainment: Television": 14,
+  "Entertainment: Video Games": 15,
+  "Science & Nature": 17,
+  "Mythology": 20,
+  "Sports": 21,
+  "Geography": 22,
+  "History": 23,
+  "Celebrities": 26,
+  "Animals": 27,
+  "Entertainment: Japanese Anime & Manga": 31,
+};
 
 // Get the category from the updated index
 const categories = Object.keys(categoryTable);
@@ -82,4 +70,24 @@ console.log(`Category: ${selectedCategory}, Number: ${categoryNumber}, URL: ${ur
 const categoryNameElement = document.getElementById('categoryName');
 categoryNameElement.innerText = selectedCategory;
 
+// Send a keep-alive request initially and at 5-hour intervals
+function sendKeepAliveRequest() {
+  const keepAliveUrl = `https://opentdb.com/api.php?amount=1&token=0949e33fcc375e5983f57a9e845a3385ddee452a75f0722372291bb34c27a88a`;
+  
+  fetch(keepAliveUrl)
+    .then(response => response.json())
+    .then(data => {
+      console.log('Keep-alive request sent:', data);
+    })
+    .catch(error => {
+      console.error('Error in keep-alive request:', error);
+    });
+}
+const FIVE_HOURS_IN_MS = 5 * 60 * 60 * 1000; // 5 hours
+setInterval(sendKeepAliveRequest, FIVE_HOURS_IN_MS);
+sendKeepAliveRequest(); // Send an initial keep-alive request
 
+// Reload the page after 15 seconds for testing
+setTimeout(() => {
+  location.reload();
+}, 15000);

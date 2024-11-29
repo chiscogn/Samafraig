@@ -58,7 +58,7 @@ const selectedCategory = categories[lastCategoryIndex];
 const categoryNumber = categoryTable[selectedCategory];
 
 // Create the URL for the quiz
-const url = `https://opentdb.com/api.php?amount=10&category=${categoryNumber}&type=multiple&token=0949e33fcc375e5983f57a9e845a3385ddee452a75f0722372291bb34c27a88a`;
+const url = `https://opentdb.com/api.php?amount=10&category=${categoryNumber}&type=multiple&token=ff1c4012f36aeb7837c95b31291bbf22e3c437d94f0cea542dd3d7687148ddb0`;
 
 // Save the URL to localStorage
 localStorage.setItem('quizURL', url);
@@ -72,7 +72,7 @@ categoryNameElement.innerText = selectedCategory;
 
 // Send a keep-alive request initially and at 5-hour intervals
 function sendKeepAliveRequest() {
-  const keepAliveUrl = `https://opentdb.com/api.php?amount=1&token=0949e33fcc375e5983f57a9e845a3385ddee452a75f0722372291bb34c27a88a`;
+  const keepAliveUrl = `https://opentdb.com/api.php?amount=1&token=ff1c4012f36aeb7837c95b31291bbf22e3c437d94f0cea542dd3d7687148ddb0`;
   
   fetch(keepAliveUrl)
     .then(response => response.json())

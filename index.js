@@ -140,6 +140,3 @@ sendKeepAliveRequest(); // Send an initial keep-alive request
 
 // Optional: Remove auto-reload during testing
 // Reload the page after 15 seconds for testing
-setTimeout(() => {
-  location.reload();
- }, 15000);

@@ -17,32 +17,42 @@ const categoryTable = {
   "Entertainment: Japanese Anime & Manga": 31,
 };
 
-let lastCategoryIndex = parseInt(localStorage.getItem('lastCategoryIndex')) || 0;
-const lastDate = localStorage.getItem('lastDate');
+// Function to get today's date in PST (YYYY-MM-DD format)
+function getPSTDate() {
+  const now = new Date();
+  // Convert to PST timezone
+  const pstDate = new Date(
+    now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" })
+  );
+  return pstDate.toISOString().split("T")[0];
+}
 
-// Get today's date in YYYY-MM-DD format
-const today = new Date().toISOString().split('T')[0];
-const todaysDateElement = document.getElementById('todaysDate');
-todaysDateElement.innerText = today;
+// Get today's date in PST
+const todayPST = getPSTDate();
+const todaysDateElement = document.getElementById("todaysDate");
+todaysDateElement.innerText = todayPST;
 
-setTimeout(() => {
-  location.reload();  // Refresh after 5 seconds
-}, 15000);
+// Retrieve the last stored date and category index
+let lastCategoryIndex = parseInt(localStorage.getItem("lastCategoryIndex")) || 0;
+const lastDate = localStorage.getItem("lastDate");
 
-// Check if the day has changed
-if (lastDate !== today) {
+// Check if the day has changed based on PST
+if (lastDate !== todayPST) {
   // Clear all localStorage except 'lastCategoryIndex'
-  const lastIndexBackup = localStorage.getItem('lastCategoryIndex'); // Backup lastCategoryIndex
+  const lastIndexBackup = localStorage.getItem("lastCategoryIndex"); // Backup lastCategoryIndex
   localStorage.clear(); // Clear localStorage
-  localStorage.setItem('lastCategoryIndex', lastIndexBackup); // Restore lastCategoryIndex
-  
+  localStorage.setItem("lastCategoryIndex", lastIndexBackup); // Restore lastCategoryIndex
+
   // Update the date in localStorage
-  localStorage.setItem('lastDate', today);
+  localStorage.setItem("lastDate", todayPST);
 
   // Increment category index and save
-  lastCategoryIndex = (lastCategoryIndex + 1) % Object.keys(categoryTable).length; // Cycle through categories
-  localStorage.setItem('lastCategoryIndex', lastCategoryIndex);
-  location.reload()
+  lastCategoryIndex =
+    (lastCategoryIndex + 1) % Object.keys(categoryTable).length; // Cycle through categories
+  localStorage.setItem("lastCategoryIndex", lastCategoryIndex);
+
+  // Reload the page to apply changes
+  location.reload();
 }
 
 // Get the category from the updated index
@@ -54,16 +64,17 @@ const categoryNumber = categoryTable[selectedCategory];
 const url = `https://opentdb.com/api.php?amount=10&category=${categoryNumber}&type=multiple`;
 
 // Save the URL to localStorage
-localStorage.setItem('quizURL', url);
+localStorage.setItem("quizURL", url);
 
 // Log the details
 console.log(`Category: ${selectedCategory}, Number: ${categoryNumber}, URL: ${url}`);
 
 // Update the category name on the page
-const categoryNameElement = document.getElementById('categoryName');
+const categoryNameElement = document.getElementById("categoryName");
 categoryNameElement.innerText = selectedCategory;
-
-// Function to update time
 
 // Optional: Remove auto-reload during testing
 // Reload the page after 15 seconds for testing
+setTimeout(() => {
+  location.reload();
+}, 15000);

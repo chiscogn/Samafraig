@@ -28,17 +28,24 @@ const today = DateTime.now().setZone("America/Los_Angeles").toISODate(); // Form
 const todaysDateElement = document.getElementById('todaysDate');
 todaysDateElement.innerText = today;
 
-// Refresh the page after 15 seconds (optional during testing)
-setTimeout(() => {
-  location.reload();
-}, 15000);
-
 // Check if the day has changed
 if (lastDate !== today) {
-  // Clear all localStorage except 'lastCategoryIndex'
-  const lastIndexBackup = localStorage.getItem('lastCategoryIndex'); // Backup lastCategoryIndex
-  localStorage.clear(); // Clear localStorage
-  localStorage.setItem('lastCategoryIndex', lastIndexBackup); // Restore lastCategoryIndex
+  // Preserve important data in localStorage (e.g., score, lastCategoryIndex)
+  const preservedData = {
+    lastCategoryIndex: localStorage.getItem('lastCategoryIndex'),
+    highScore: localStorage.getItem('highScore'), // Preserving the score
+    recentScore: localStorage.getItem('recentScore'),
+  };
+
+  // Clear localStorage
+  localStorage.clear();
+
+  // Restore preserved data
+  Object.entries(preservedData).forEach(([key, value]) => {
+    if (value !== null) {
+      localStorage.setItem(key, value);
+    }
+  });
 
   // Update the date in localStorage
   localStorage.setItem('lastDate', today);
@@ -46,6 +53,8 @@ if (lastDate !== today) {
   // Increment category index and save
   lastCategoryIndex = (lastCategoryIndex + 1) % Object.keys(categoryTable).length; // Cycle through categories
   localStorage.setItem('lastCategoryIndex', lastCategoryIndex);
+
+  // Reload the page to apply changes
   location.reload();
 }
 

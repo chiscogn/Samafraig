@@ -1,3 +1,6 @@
+// Import Luxon (make sure to include the Luxon library in your HTML or project setup)
+// <script src="https://cdn.jsdelivr.net/npm/luxon@3.3.0/build/global/luxon.min.js"></script>
+
 // Define category table for quiz categories
 const categoryTable = {
   "Entertainment: Books": 10,
@@ -20,13 +23,18 @@ const categoryTable = {
 let lastCategoryIndex = parseInt(localStorage.getItem('lastCategoryIndex')) || 0;
 const lastDate = localStorage.getItem('lastDate');
 
-// Get today's date in YYYY-MM-DD format
-const today = new Date().toISOString().split('T')[0];
+// Use Luxon to get the current date in PST
+const { DateTime } = luxon;
+const pstNow = DateTime.now().setZone("America/Los_Angeles"); // Get current time in PST
+const today = pstNow.toISODate(); // Format as YYYY-MM-DD
+
+// Update the date displayed on the page
 const todaysDateElement = document.getElementById('todaysDate');
 todaysDateElement.innerText = today;
 
+// Optional: Auto-refresh page for testing
 setTimeout(() => {
-  location.reload();  // Refresh after 5 seconds
+  location.reload(); // Refresh after 15 seconds
 }, 15000);
 
 // Check if the day has changed
@@ -35,14 +43,14 @@ if (lastDate !== today) {
   const lastIndexBackup = localStorage.getItem('lastCategoryIndex'); // Backup lastCategoryIndex
   localStorage.clear(); // Clear localStorage
   localStorage.setItem('lastCategoryIndex', lastIndexBackup); // Restore lastCategoryIndex
-  
+
   // Update the date in localStorage
   localStorage.setItem('lastDate', today);
 
   // Increment category index and save
   lastCategoryIndex = (lastCategoryIndex + 1) % Object.keys(categoryTable).length; // Cycle through categories
   localStorage.setItem('lastCategoryIndex', lastCategoryIndex);
-  location.reload()
+  location.reload(); // Reload the page
 }
 
 // Get the category from the updated index
@@ -62,8 +70,3 @@ console.log(`Category: ${selectedCategory}, Number: ${categoryNumber}, URL: ${ur
 // Update the category name on the page
 const categoryNameElement = document.getElementById('categoryName');
 categoryNameElement.innerText = selectedCategory;
-
-// Function to update time
-
-// Optional: Remove auto-reload during testing
-// Reload the page after 15 seconds for testing

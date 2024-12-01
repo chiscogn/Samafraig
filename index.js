@@ -1,5 +1,5 @@
-// Import Luxon (only if using a CDN or bundler like Webpack)
-const { DateTime } = luxon;
+// Import Luxon (if using ES modules, or include via CDN for browser use)
+// const { DateTime } = require('luxon');
 
 // Define category table for quiz categories
 const categoryTable = {
@@ -20,44 +20,35 @@ const categoryTable = {
   "Entertainment: Japanese Anime & Manga": 31,
 };
 
-// Function to get today's date in PST (YYYY-MM-DD format)
-function getPSTDate() {
-  return DateTime.now().setZone("America/Los_Angeles").toISODate();
-}
+let lastCategoryIndex = parseInt(localStorage.getItem('lastCategoryIndex')) || 0;
+const lastDate = localStorage.getItem('lastDate');
 
 // Get today's date in PST
-const todayPST = getPSTDate();
-console.log("PST Date:", todayPST); // Log current PST date
+const now = luxon.DateTime.now().setZone('America/Los_Angeles');
+const today = now.toISODate(); // Format as YYYY-MM-DD
 
-// Retrieve the last stored date and category index
-let lastCategoryIndex = parseInt(localStorage.getItem("lastCategoryIndex")) || 0;
-const lastDate = localStorage.getItem("lastDate");
+// Display today's date
+const todaysDateElement = document.getElementById('todaysDate');
+todaysDateElement.innerText = today;
 
-// Check if the day has changed based on PST
-if (lastDate !== todayPST) {
-  console.log("Date has changed. Resetting relevant localStorage keys...");
+setTimeout(() => {
+  location.reload();  // Refresh after 15 seconds
+}, 15000);
 
-  // Preserve specific keys (like mostRecentScore)
-  const preservedData = {
-    mostRecentScore: localStorage.getItem("mostRecentScore"),
-  };
+// Check if the day has changed
+if (lastDate !== today) {
+  // Clear all localStorage except 'lastCategoryIndex'
+  const lastIndexBackup = localStorage.getItem('lastCategoryIndex'); // Backup lastCategoryIndex
+  localStorage.clear(); // Clear localStorage
+  localStorage.setItem('lastCategoryIndex', lastIndexBackup); // Restore lastCategoryIndex
+  
+  // Update the date in localStorage
+  localStorage.setItem('lastDate', today);
 
-  // Clear localStorage
-  localStorage.clear();
-
-  // Restore preserved keys
-  if (preservedData.mostRecentScore !== null) {
-    localStorage.setItem("mostRecentScore", preservedData.mostRecentScore);
-  }
-
-  // Update the date and category index in localStorage
-  localStorage.setItem("lastDate", todayPST);
-  lastCategoryIndex =
-    (lastCategoryIndex + 1) % Object.keys(categoryTable).length; // Cycle through categories
-  localStorage.setItem("lastCategoryIndex", lastCategoryIndex);
-
-  // Reload the page to apply changes
-  location.href = `${location.pathname}?_=${new Date().getTime()}`;
+  // Increment category index and save
+  lastCategoryIndex = (lastCategoryIndex + 1) % Object.keys(categoryTable).length; // Cycle through categories
+  localStorage.setItem('lastCategoryIndex', lastCategoryIndex);
+  location.reload();
 }
 
 // Get the category from the updated index
@@ -69,19 +60,16 @@ const categoryNumber = categoryTable[selectedCategory];
 const url = `https://opentdb.com/api.php?amount=2&category=${categoryNumber}&type=multiple`;
 
 // Save the URL to localStorage
-localStorage.setItem("quizURL", url);
+localStorage.setItem('quizURL', url);
 
 // Log the details
 console.log(`Category: ${selectedCategory}, Number: ${categoryNumber}, URL: ${url}`);
 
-// Update the category name and today's date on the page
-const categoryNameElement = document.getElementById("categoryName");
-const todaysDateElement = document.getElementById("todaysDate");
-if (categoryNameElement) categoryNameElement.innerText = selectedCategory;
-if (todaysDateElement) todaysDateElement.innerText = todayPST;
+// Update the category name on the page
+const categoryNameElement = document.getElementById('categoryName');
+categoryNameElement.innerText = selectedCategory;
+
+// Function to update time
 
 // Optional: Remove auto-reload during testing
 // Reload the page after 15 seconds for testing
-setTimeout(() => {
-  location.href = `${location.pathname}?_=${new Date().getTime()}`;
-}, 15000);

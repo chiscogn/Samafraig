@@ -19,8 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
     console.error('Quiz URL not found in localStorage!');
   }
 
-  // Get today's date in YYYY-MM-DD format
-  const today = new Date().toISOString().split('T')[0];
+  // Use Luxon to get the current date in PST
+  const { DateTime } = luxon;
+  const today = DateTime.now().setZone("America/Los_Angeles").toISODate(); // Get current date in PST (YYYY-MM-DD)
 
   // Retrieve stored date and questions from localStorage
   const storedDate = localStorage.getItem('lastDate');

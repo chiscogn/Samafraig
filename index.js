@@ -1,6 +1,3 @@
-// Import Luxon
-const { DateTime } = luxon;
-
 // Define category table for quiz categories
 const categoryTable = {
   "Entertainment: Books": 10,
@@ -23,39 +20,29 @@ const categoryTable = {
 let lastCategoryIndex = parseInt(localStorage.getItem('lastCategoryIndex')) || 0;
 const lastDate = localStorage.getItem('lastDate');
 
-// Get today's date in PST (Pacific Standard Time)
-const today = DateTime.now().setZone("America/Los_Angeles").toISODate(); // Format: YYYY-MM-DD
+// Get today's date in YYYY-MM-DD format
+const today = new Date().toISOString().split('T')[0];
 const todaysDateElement = document.getElementById('todaysDate');
 todaysDateElement.innerText = today;
 
+setTimeout(() => {
+  location.reload();  // Refresh after 5 seconds
+}, 15000);
+
 // Check if the day has changed
 if (lastDate !== today) {
-  // Preserve important data in localStorage (e.g., score, lastCategoryIndex)
-  const preservedData = {
-    lastCategoryIndex: localStorage.getItem('lastCategoryIndex'),
-    highScore: localStorage.getItem('highScore'), // Preserving the score
-    recentScore: localStorage.getItem('recentScore'),
-  };
-
-  // Clear localStorage
-  localStorage.clear();
-
-  // Restore preserved data
-  Object.entries(preservedData).forEach(([key, value]) => {
-    if (value !== null) {
-      localStorage.setItem(key, value);
-    }
-  });
-
+  // Clear all localStorage except 'lastCategoryIndex'
+  const lastIndexBackup = localStorage.getItem('lastCategoryIndex'); // Backup lastCategoryIndex
+  localStorage.clear(); // Clear localStorage
+  localStorage.setItem('lastCategoryIndex', lastIndexBackup); // Restore lastCategoryIndex
+  
   // Update the date in localStorage
   localStorage.setItem('lastDate', today);
 
   // Increment category index and save
   lastCategoryIndex = (lastCategoryIndex + 1) % Object.keys(categoryTable).length; // Cycle through categories
   localStorage.setItem('lastCategoryIndex', lastCategoryIndex);
-
-  // Reload the page to apply changes
-  location.reload();
+  location.reload()
 }
 
 // Get the category from the updated index
@@ -64,7 +51,7 @@ const selectedCategory = categories[lastCategoryIndex];
 const categoryNumber = categoryTable[selectedCategory];
 
 // Create the URL for the quiz
-const url = `https://opentdb.com/api.php?amount=2&category=${categoryNumber}&type=multiple`;
+const url = `https://opentdb.com/api.php?amount=10&category=${categoryNumber}&type=multiple`;
 
 // Save the URL to localStorage
 localStorage.setItem('quizURL', url);
@@ -75,3 +62,8 @@ console.log(`Category: ${selectedCategory}, Number: ${categoryNumber}, URL: ${ur
 // Update the category name on the page
 const categoryNameElement = document.getElementById('categoryName');
 categoryNameElement.innerText = selectedCategory;
+
+// Function to update time
+
+// Optional: Remove auto-reload during testing
+// Reload the page after 15 seconds for testing

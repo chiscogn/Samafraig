@@ -1,4 +1,4 @@
-// Import Luxon (this works automatically if you're using it via CDN)
+// Import Luxon (only if using a CDN or bundler like Webpack)
 const { DateTime } = luxon;
 
 // Define category table for quiz categories
@@ -35,20 +35,28 @@ const lastDate = localStorage.getItem("lastDate");
 
 // Check if the day has changed based on PST
 if (lastDate !== todayPST) {
-  console.log("Date has changed. Clearing localStorage...");
-  const lastIndexBackup = localStorage.getItem("lastCategoryIndex"); // Backup lastCategoryIndex
-  localStorage.clear(); // Clear all localStorage
-  localStorage.setItem("lastCategoryIndex", lastIndexBackup || "0"); // Restore lastCategoryIndex
+  console.log("Date has changed. Resetting relevant localStorage keys...");
 
-  // Update the date in localStorage
+  // Preserve specific keys (like mostRecentScore)
+  const preservedData = {
+    mostRecentScore: localStorage.getItem("mostRecentScore"),
+  };
+
+  // Clear localStorage
+  localStorage.clear();
+
+  // Restore preserved keys
+  if (preservedData.mostRecentScore !== null) {
+    localStorage.setItem("mostRecentScore", preservedData.mostRecentScore);
+  }
+
+  // Update the date and category index in localStorage
   localStorage.setItem("lastDate", todayPST);
-
-  // Increment category index and save
   lastCategoryIndex =
     (lastCategoryIndex + 1) % Object.keys(categoryTable).length; // Cycle through categories
   localStorage.setItem("lastCategoryIndex", lastCategoryIndex);
 
-  // Reload the page to apply changes, bypassing cache
+  // Reload the page to apply changes
   location.href = `${location.pathname}?_=${new Date().getTime()}`;
 }
 

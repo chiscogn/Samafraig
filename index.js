@@ -1,5 +1,5 @@
-// Import Luxon (if using ES modules, or include via CDN for browser use)
-// const { DateTime } = require('luxon');
+// Import Luxon
+const { DateTime } = luxon;
 
 // Define category table for quiz categories
 const categoryTable = {
@@ -23,16 +23,14 @@ const categoryTable = {
 let lastCategoryIndex = parseInt(localStorage.getItem('lastCategoryIndex')) || 0;
 const lastDate = localStorage.getItem('lastDate');
 
-// Get today's date in PST
-const now = luxon.DateTime.now().setZone('America/Los_Angeles');
-const today = now.toISODate(); // Format as YYYY-MM-DD
-
-// Display today's date
+// Get today's date in PST (Pacific Standard Time)
+const today = DateTime.now().setZone("America/Los_Angeles").toISODate(); // Format: YYYY-MM-DD
 const todaysDateElement = document.getElementById('todaysDate');
 todaysDateElement.innerText = today;
 
+// Refresh the page after 15 seconds (optional during testing)
 setTimeout(() => {
-  location.reload();  // Refresh after 15 seconds
+  location.reload();
 }, 15000);
 
 // Check if the day has changed
@@ -41,7 +39,7 @@ if (lastDate !== today) {
   const lastIndexBackup = localStorage.getItem('lastCategoryIndex'); // Backup lastCategoryIndex
   localStorage.clear(); // Clear localStorage
   localStorage.setItem('lastCategoryIndex', lastIndexBackup); // Restore lastCategoryIndex
-  
+
   // Update the date in localStorage
   localStorage.setItem('lastDate', today);
 
@@ -68,8 +66,3 @@ console.log(`Category: ${selectedCategory}, Number: ${categoryNumber}, URL: ${ur
 // Update the category name on the page
 const categoryNameElement = document.getElementById('categoryName');
 categoryNameElement.innerText = selectedCategory;
-
-// Function to update time
-
-// Optional: Remove auto-reload during testing
-// Reload the page after 15 seconds for testing

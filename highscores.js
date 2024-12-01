@@ -13,6 +13,7 @@ if (highScores.length === 0) {
   // Determine the highest score
   const topScore = highScores[0]?.score;
 
+  // Display the high scores with a trophy for the highest scorer
   highScoresList.innerHTML = highScores
     .map((score) => {
       // Add a trophy to everyone with the top score

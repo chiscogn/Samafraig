@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // CONSTANTS
   const CORRECT_BONUS = 10;
-  const MAX_QUESTIONS = 2; // Set to 10 for your use case
+  const MAX_QUESTIONS = 10; // Set to 10 for your use case
   const CORRECT_ANSWER_COLOR = '#28a745'; // Color for highlighting the correct answer
 
   // Start the game

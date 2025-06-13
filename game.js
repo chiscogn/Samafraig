@@ -112,7 +112,7 @@ function checkAnswer(selected, correct) {
   setTimeout(() => {
     current++;
     showQuestion();
-  }, 1000);
+  }, 3000);
 }
 
 function endGame() {

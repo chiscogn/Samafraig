@@ -1,161 +1,121 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const question = document.getElementById('question');
-  const choices = Array.from(document.getElementsByClassName('choice-text'));
-  const progressText = document.getElementById('progressText');
-  const scoreText = document.getElementById('score');
-  const progressBarFull = document.getElementById('progressBarFull');
-  const loader = document.getElementById('loader');
-  const game = document.getElementById('game');
-  let currentQuestion = {};
-  let acceptingAnswers = false;
-  let score = 0;
-  let questionCounter = 0;
-  let availableQuestions = [];
-  let questions = [];
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyOdaSLyA1hp3W8Mj0oxWOEVKeN8tuk1wzqm7xAPok-nhG6YQOInk-tDeUaL7YQMPMHGg/exec';
 
-  // Fetch the quiz URL from localStorage
-  const url = localStorage.getItem('quizURL');
-  if (!url) {
-    console.error('Quiz URL not found in localStorage!');
-  }
+let questions = [];
+let current = 0;
+let score = 0;
 
-  // Use Luxon to get the current date in PST
-  const { DateTime } = luxon;
-  const today = DateTime.now().setZone("America/Los_Angeles").toISODate(); // Get current date in PST (YYYY-MM-DD)
+const loader = document.getElementById('loader');
+const game = document.getElementById('game');
+const questionEl = document.getElementById('question');
+const choices = Array.from(document.getElementsByClassName('choice-text'));
+const scoreText = document.getElementById('score');
+const progressText = document.getElementById('progressText');
+const progressBarFull = document.getElementById('progressBarFull');
 
-  // Retrieve stored date and questions from localStorage
-  const storedDate = localStorage.getItem('lastDate');
-  const storedQuestions = JSON.parse(localStorage.getItem('storedQuestions'));
+// Get today's date and selected category from localStorage
+const todaysDateStr = localStorage.getItem('todaysDate');
+const category = localStorage.getItem('selectedCategory');
 
-  // CONSTANTS
-  const CORRECT_BONUS = 10;
-  const MAX_QUESTIONS = 10; // Set to 10 for your use case
-  const CORRECT_ANSWER_COLOR = '#28a745'; // Color for highlighting the correct answer
+if (!todaysDateStr || !category) {
+  alert('No date or category found, redirecting to homepage.');
+  window.location.href = 'index.html';
+  throw new Error('Missing todaysDate or selectedCategory in localStorage');
+}
 
-  // Start the game
-  const startGame = () => {
-    if (!questions || questions.length === 0) {
-      console.error('No questions available to start the game!');
-      return;
-    }
+const dateKey = todaysDateStr;
+const savedData = JSON.parse(localStorage.getItem('dailyQuestions'));
 
-    questionCounter = 0;
-    score = 0;
-    availableQuestions = [...questions]; // This is important! Create a copy of the questions array for the game session
-    getNewQuestion();
-    game.classList.remove('hidden');
-    loader.classList.add('hidden');
-  };
+if (
+  savedData &&
+  savedData.date === dateKey &&
+  savedData.category === category &&
+  Array.isArray(savedData.questions)
+) {
+  questions = savedData.questions;
+  startGame();
+} else {
+  // Fallback fetch if questions not cached
+  fetch(`${SCRIPT_URL}?type=questions&category=${encodeURIComponent(category)}`)
+    .then(res => res.json())
+    .then(data => {
+      const processed = data.map(entry => ({
+        Question: entry.Question,
+        Answer: entry.Answer,
+        "Option A": entry["Option A"],
+        "Option B": entry["Option B"],
+        "Option C": entry["Option C"],
+        "Option D": entry["Option D"]
+      }));
 
-  // Get a new question
-  const getNewQuestion = () => {
-    if (availableQuestions.length === 0 || questionCounter >= MAX_QUESTIONS) {
-      localStorage.setItem('mostRecentScore', score);
-      // Go to the end page
-      return window.location.assign('/Samafraig/end.html');
-    }
+      questions = processed.sort(() => Math.random() - 0.5).slice(0, 10);
 
-    questionCounter++;
-    progressText.innerText = `Question ${questionCounter}/${MAX_QUESTIONS}`;
-    // Update the progress bar
-    progressBarFull.style.width = `${(questionCounter / MAX_QUESTIONS) * 100}%`;
-
-    const questionIndex = Math.floor(Math.random() * availableQuestions.length);
-    currentQuestion = availableQuestions[questionIndex];
-    question.innerHTML = currentQuestion.question;
-
-    choices.forEach((choice) => {
-      const number = choice.dataset['number'];
-      choice.innerHTML = currentQuestion['choice' + number];
-      choice.style.removeProperty('background-color'); // Remove any previous color
-    });
-
-    availableQuestions.splice(questionIndex, 1);
-    acceptingAnswers = true;
-  };
-
-  // Fetch new questions if needed
-  if (storedDate !== today || !storedQuestions) {
-    if (url) {
-      console.log('Fetching new questions...');
-      fetch(url)
-        .then((res) => res.json())
-        .then((loadedQuestions) => {
-          if (!loadedQuestions || !loadedQuestions.results) {
-            console.error('Invalid response from API:', loadedQuestions);
-            return;
-          }
-
-          questions = loadedQuestions.results.map((loadedQuestion) => {
-            const formattedQuestion = {
-              question: loadedQuestion.question,
-            };
-
-            const answerChoices = [...loadedQuestion.incorrect_answers];
-            formattedQuestion.answer = Math.floor(Math.random() * 4) + 1;
-            answerChoices.splice(formattedQuestion.answer - 1, 0, loadedQuestion.correct_answer);
-
-            answerChoices.forEach((choice, index) => {
-              formattedQuestion['choice' + (index + 1)] = choice;
-            });
-
-            return formattedQuestion;
-          });
-
-          // Save questions and current date to localStorage
-          localStorage.setItem('storedQuestions', JSON.stringify(questions));
-          localStorage.setItem('lastDate', today);
-
-          startGame();
+      localStorage.setItem(
+        'dailyQuestions',
+        JSON.stringify({
+          date: dateKey,
+          category: category,
+          questions: questions
         })
-        .catch((err) => console.error('Error fetching questions:', err));
-    } else {
-      console.error('URL not found in localStorage!');
-    }
-  } else {
-    console.log('Using stored questions...');
-    questions = storedQuestions;
-    startGame();
+      );
+
+      startGame();
+    })
+    .catch(err => {
+      loader.innerHTML = '<p>Error loading questions. Please try again later.</p>';
+      console.error('Error fetching questions:', err);
+    });
+}
+
+function startGame() {
+  loader.classList.add('hidden');
+  game.classList.remove('hidden');
+  showQuestion();
+}
+
+function showQuestion() {
+  const q = questions[current];
+  if (!q) return endGame();
+
+  progressText.innerText = `Question ${current + 1} of ${questions.length}`;
+  progressBarFull.style.width = `${((current + 1) / questions.length) * 100}%`;
+
+  questionEl.innerText = q.Question;
+
+  choices.forEach(choice => {
+    const opt = choice.getAttribute('data-opt');
+    choice.innerText = q['Option ' + opt];
+    choice.classList.remove('correct', 'incorrect');
+    choice.parentElement.classList.remove('disabled');
+    choice.onclick = () => checkAnswer(opt, q.Answer);
+  });
+}
+
+function checkAnswer(selected, correct) {
+  const isCorrect = selected.trim().toUpperCase() === correct.trim().toUpperCase();
+
+  if (isCorrect) {
+    score += 10;
+    scoreText.innerText = score;
   }
 
-  // Add event listeners to choices for answer selection
-  choices.forEach((choice) => {
-    choice.addEventListener('click', (e) => {
-      console.log('Choice clicked:', e.target);
-      if (!acceptingAnswers) {
-        console.log('Not accepting answers right now.');
-        return;
-      }
-
-      acceptingAnswers = false; // Block further clicks until the next question is ready
-
-      const selectedChoice = e.target; // Get the clicked element
-      const selectedAnswer = selectedChoice.dataset['number']; // Retrieve the data-number attribute
-
-      const classToApply =
-        selectedAnswer == currentQuestion.answer ? 'correct' : 'incorrect';
-
-      if (classToApply === 'correct') {
-        incrementScore(CORRECT_BONUS);
-      } else {
-        // Highlight the correct answer
-        const correctChoiceIndex = currentQuestion.answer - 1;
-        choices[correctChoiceIndex].style.backgroundColor = CORRECT_ANSWER_COLOR;
-      }
-
-      selectedChoice.parentElement.classList.add(classToApply); // Add feedback class
-
-      setTimeout(() => {
-        selectedChoice.parentElement.classList.remove(classToApply); // Remove feedback class
-        choices.forEach((choice) => choice.style.removeProperty('background-color')); // Reset styles
-        getNewQuestion(); // Load the next question
-      }, 3000); // Wait 3 seconds before moving on
-    });
+  choices.forEach(choice => {
+    choice.parentElement.classList.add('disabled');
+    const opt = choice.getAttribute('data-opt');
+    if (opt === correct) {
+      choice.classList.add('correct');
+    } else if (opt === selected) {
+      choice.classList.add('incorrect');
+    }
+    choice.onclick = null;
   });
 
-  // Increment score function
-  const incrementScore = (num) => {
-    score += num;
-    scoreText.innerText = score;
-  };
-});
+  setTimeout(() => {
+    current++;
+    showQuestion();
+  }, 1000);
+}
+
+function endGame() {
+  localStorage.setItem('mostRecentScore', score);
+  window.location.href = 'end.html';
+}

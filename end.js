@@ -1,74 +1,49 @@
-const finalScore = document.getElementById('finalScore');
-const mostRecentScore = localStorage.getItem('mostRecentScore');
-const avatarList = document.getElementById('avatarList');
-const saveScoreBtn = document.getElementById('saveScoreBtn');
-const saveScoreForm = document.getElementById('saveScoreForm');
+document.addEventListener('DOMContentLoaded', () => {
+  const finalScoreEl = document.getElementById('finalScore');
+  const saveScoreBtn = document.getElementById('saveScoreBtn');
+  const avatarList = document.getElementById('avatarList');
+  const saveScoreForm = document.getElementById('saveScoreForm');
 
-// Use Luxon to get the current date in PST
-const { DateTime } = luxon;
-const today = DateTime.now().setZone("America/Los_Angeles").toISODate(); // Get current date in PST (YYYY-MM-DD)
+  // Get the most recent score
+  const mostRecentScore = parseInt(localStorage.getItem('mostRecentScore'), 10) || 0;
+  finalScoreEl.textContent = mostRecentScore;
 
-const highScores = JSON.parse(localStorage.getItem('highScores')) || [];
+  let selectedAvatar = null;
 
-const MAX_HIGH_SCORES = 5;
+  // Enable save button only when an avatar is selected
+  avatarList.addEventListener('click', e => {
+    const selected = e.target.closest('.circle');
+    if (!selected) return;
 
-finalScore.innerText = mostRecentScore;
+    // Deselect previous selections
+    document.querySelectorAll('.circle.selected').forEach(el => el.classList.remove('selected'));
 
-let selectedAvatar = null;
+    // Select current avatar
+    selected.classList.add('selected');
+    selectedAvatar = selected.getAttribute('data-avatar-name');
 
-// Handle avatar selection with single selection logic
-avatarList.addEventListener('click', (event) => {
-  // Check if the clicked element is a circle
-  if (event.target.classList.contains('circle')) {
-    // If a previous avatar is selected, deselect it
-    if (selectedAvatar) {
-      selectedAvatar.classList.remove('selected');
+    saveScoreBtn.disabled = false;
+  });
+
+  saveScoreForm.addEventListener('submit', e => {
+    e.preventDefault();
+    if (!selectedAvatar) return;
+
+    // Use the date stored in localStorage (which matches the game day)
+    const today = localStorage.getItem('todaysDate') || new Date().toISOString().split('T')[0];
+    const scoreEntry = { name: selectedAvatar, score: mostRecentScore };
+
+    // Retrieve existing daily scores or initialize
+    const localData = JSON.parse(localStorage.getItem('dailyLocalScores')) || {};
+    if (!localData[today]) {
+      localData[today] = [];
     }
 
-    // Select the clicked avatar and visually indicate selection
-    selectedAvatar = event.target;
-    selectedAvatar.classList.add('selected');
+    // Add new score entry
+    localData[today].push(scoreEntry);
+    localStorage.setItem('dailyLocalScores', JSON.stringify(localData));
 
-    // Enable the save button only if an avatar is selected
-    saveScoreBtn.disabled = selectedAvatar === null;
-  } else {
-    // Clicking outside an avatar deselects the current one (optional)
-    if (selectedAvatar) {
-      selectedAvatar.classList.remove('selected');
-      selectedAvatar = null;
-      saveScoreBtn.disabled = true;
-    }
-  }
-});
-
-// Handle form submission
-saveScoreForm.addEventListener('submit', (event) => {
-  event.preventDefault(); // Prevent default form submission
-
-  if (!selectedAvatar) {
-    return; // Don't save if no avatar selected
-  }
-
-  const score = {
-    score: parseInt(mostRecentScore),
-    name: selectedAvatar.dataset.avatarName, // Use avatar name
-  };
-
-  // Find the existing score index
-  const existingScoreIndex = highScores.findIndex(s => s.name === score.name);
-
-  if (existingScoreIndex !== -1) {
-    // Replace the existing score with the new one
-    highScores[existingScoreIndex] = score;
-  } else {
-    // If no existing score, push the new score
-    highScores.push(score);
-  }
-
-  // Sort and limit high scores
-  highScores.sort((a, b) => b.score - a.score);
-  highScores.splice(MAX_HIGH_SCORES);
-
-  localStorage.setItem('highScores', JSON.stringify(highScores));
-  window.location.assign('/Samafraig');  // Redirect to home page after saving
+    // Redirect to homepage after saving
+    window.location.assign('index.html');
+  });
 });

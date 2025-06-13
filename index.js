@@ -1,72 +1,102 @@
-// Import Luxon (make sure to include the Luxon library in your HTML or project setup)
-// <script src="https://cdn.jsdelivr.net/npm/luxon@3.3.0/build/global/luxon.min.js"></script>
+// index.js
+const categoryNameEl = document.getElementById('categoryName');
 
-// Define category table for quiz categories
-const categoryTable = {
-  "Entertainment: Books": 10,
-  "Technology": 18,
-  "General Knowledge": 9,
-  "Entertainment: Film": 11,
-  "Entertainment: Music": 12,
-  "Entertainment: Television": 14,
-  "Entertainment: Video Games": 15,
-  "Science & Nature": 17,
-  "Mythology": 20,
-  "Sports": 21,
-  "Geography": 22,
-  "History": 23,
-  "Celebrities": 26,
-  "Animals": 27,
-  "Entertainment: Japanese Anime & Manga": 31,
-};
+const CATEGORIES = [
+  'Food & Drink',
+  'Film, TV & Celebrities',
+  'Geography',
+  'Music & Performing Arts',
+  'Science',
+  'History & Politics',
+  'Society, Culture & Mythology',
+  'Arts & Literature',
+  'General Knowledge',
+  'Sport & Leisure',
+  'Technology, Gadgets & Vehicles',
+  'Anime & Cartoons',
+  'Video Games & Board Games'
+];
 
-let lastCategoryIndex = parseInt(localStorage.getItem('lastCategoryIndex')) || 0;
-const lastDate = localStorage.getItem('lastDate');
+// Get today's date string YYYY-MM-DD
+const now = new Date();
+const todaysDateStr = now.toISOString().split('T')[0];
 
-// Use Luxon to get the current date in PST
-const { DateTime } = luxon;
-const pstNow = DateTime.now().setZone("America/Los_Angeles"); // Get current time in PST
-const today = pstNow.toISODate(); // Format as YYYY-MM-DD
+// Get last stored date and category index from localStorage
+const lastDate = localStorage.getItem('todaysDate');
+let categoryIndex = parseInt(localStorage.getItem('categoryIndex'), 10);
 
-// Update the date displayed on the page
-const todaysDateElement = document.getElementById('todaysDate');
-todaysDateElement.innerText = today;
-
-// Optional: Auto-refresh page for testing
-setTimeout(() => {
-  location.reload(); // Refresh after 15 seconds
-}, 15000);
-
-// Check if the day has changed
-if (lastDate !== today) {
-  // Clear all localStorage except 'lastCategoryIndex'
-  const lastIndexBackup = localStorage.getItem('lastCategoryIndex'); // Backup lastCategoryIndex
-  localStorage.clear(); // Clear localStorage
-  localStorage.setItem('lastCategoryIndex', lastIndexBackup); // Restore lastCategoryIndex
-
-  // Update the date in localStorage
-  localStorage.setItem('lastDate', today);
-
-  // Increment category index and save
-  lastCategoryIndex = (lastCategoryIndex + 1) % Object.keys(categoryTable).length; // Cycle through categories
-  localStorage.setItem('lastCategoryIndex', lastCategoryIndex);
-  location.reload(); // Reload the page
+// If no index saved, start at 0
+if (isNaN(categoryIndex)) {
+  categoryIndex = 0;
 }
 
-// Get the category from the updated index
-const categories = Object.keys(categoryTable);
-const selectedCategory = categories[lastCategoryIndex];
-const categoryNumber = categoryTable[selectedCategory];
+// If date changed or first load, increment category index and update date in localStorage
+if (lastDate !== todaysDateStr) {
+  categoryIndex = (categoryIndex + 1) % CATEGORIES.length;
+  localStorage.setItem('todaysDate', todaysDateStr);
+  localStorage.setItem('categoryIndex', categoryIndex);
 
-// Create the URL for the quiz
-const url = `https://opentdb.com/api.php?amount=10&category=${categoryNumber}&type=multiple`;
+  // Clear daily scores since day changed
+  localStorage.removeItem('dailyLocalScores');
+}
 
-// Save the URL to localStorage
-localStorage.setItem('quizURL', url);
+const category = CATEGORIES[categoryIndex];
 
-// Log the details
-console.log(`Category: ${selectedCategory}, Number: ${categoryNumber}, URL: ${url}`);
+// Show category on homepage
+if (categoryNameEl) {
+  categoryNameEl.textContent = category;
+}
 
-// Update the category name on the page
-const categoryNameElement = document.getElementById('categoryName');
-categoryNameElement.innerText = selectedCategory;
+// Save selected category and today's date for game.js
+localStorage.setItem('selectedCategory', category);
+localStorage.setItem('todaysDate', todaysDateStr);
+
+const dateKey = todaysDateStr;
+
+const savedData = JSON.parse(localStorage.getItem('dailyQuestions'));
+const isTodayCached =
+  savedData &&
+  savedData.date === dateKey &&
+  savedData.category === category &&
+  Array.isArray(savedData.questions);
+
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyOdaSLyA1hp3W8Mj0oxWOEVKeN8tuk1wzqm7xAPok-nhG6YQOInk-tDeUaL7YQMPMHGg/exec';
+
+if (!isTodayCached) {
+  fetch(`${SCRIPT_URL}?type=questions&category=${encodeURIComponent(category)}`)
+    .then(res => res.json())
+    .then(data => {
+      const processed = data.map(entry => ({
+        Question: entry.Question,
+        Answer: entry.Answer,
+        "Option A": entry["Option A"],
+        "Option B": entry["Option B"],
+        "Option C": entry["Option C"],
+        "Option D": entry["Option D"]
+      }));
+
+      // Shuffle and pick 10 questions
+      const shuffled = processed.sort(() => Math.random() - 0.5).slice(0, 10);
+
+      localStorage.setItem(
+        'dailyQuestions',
+        JSON.stringify({
+          date: dateKey,
+          category: category,
+          questions: shuffled
+        })
+      );
+
+      console.log('✅ Questions preloaded for', category, 'on', dateKey);
+    })
+    .catch(err => {
+      console.error('❌ Failed to preload questions:', err);
+    });
+}
+
+// Only auto-reload if on the homepage (index.html)
+if (window.location.pathname.includes('index.html') || window.location.pathname === '/') {
+  setInterval(() => {
+    location.reload();
+  }, 1000 * 60 * 60); // Reload every hour
+}

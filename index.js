@@ -38,6 +38,7 @@ if (lastDate !== todaysDateStr) {
 
   // Clear daily scores since day changed
   localStorage.removeItem('dailyLocalScores');
+  localStorage.removeItem('dadJokeData');
 }
 
 const category = CATEGORIES[categoryIndex];
